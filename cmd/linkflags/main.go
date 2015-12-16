@@ -1,3 +1,18 @@
+/*
+Copyright 2015 Gravitational, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package main
 
 import (
@@ -27,25 +42,31 @@ var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
 var goVersionPattern = regexp.MustCompile(`go([1-9])\.(\d+)(?:.\d+)*`)
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func run() error {
 	log.SetFlags(0)
 	flag.Parse()
 	if *pkg == "" {
-		log.Fatalln("pkg required")
+		return fmt.Errorf("-pkg required")
 	}
 
 	goVersion, err := goToolVersion()
 	if err != nil {
-		log.Fatalf("failed to determine go tool version: %v\n", err)
+		return fmt.Errorf("failed to determine go tool version: %v\n", err)
 	}
 
 	git := newGit(*pkg)
 	commitID, err := git.commitID()
 	if err != nil {
-		log.Fatalf("failed to obtain git commit ID: %v\n", err)
+		return fmt.Errorf("failed to obtain git commit ID: %v\n", err)
 	}
 	treeState, err := git.treeState()
 	if err != nil {
-		log.Fatalf("failed to determine git tree state: %v\n", err)
+		return fmt.Errorf("failed to determine git tree state: %v\n", err)
 	}
 	// FIXME: empty the version only on exit code error
 	version, err := git.version(string(commitID))
@@ -78,6 +99,7 @@ func main() {
 	}
 
 	fmt.Printf("%s", strings.Join(linkFlags, " "))
+	return nil
 }
 
 // toolError is a tool execution error.
