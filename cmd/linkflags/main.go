@@ -12,10 +12,13 @@ import (
 	"strings"
 )
 
-const versionPackage = "github.com/gravitational/version"
-
 // pkg is the path to the package the tool will create linker flags for.
 var pkg = flag.String("pkg", "", "root package path")
+
+// versionPackage is the path to this version package.
+// It is used to access version information attributes during link time.
+// This flag is useful when the version package is custom-vendored and has a different package path.
+var versionPackage = flag.String("verpkg", "github.com/gravitational/version", "path to the version package")
 
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
 var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
@@ -59,9 +62,9 @@ func main() {
 	var linkFlags []string
 	linkFlag := func(key, value string) string {
 		if goVersion <= 14 {
-			return fmt.Sprintf("-X %s.%s %s", versionPackage, key, value)
+			return fmt.Sprintf("-X %s.%s %s", *versionPackage, key, value)
 		} else {
-			return fmt.Sprintf("-X %s.%s=%s", versionPackage, key, value)
+			return fmt.Sprintf("-X %s.%s=%s", *versionPackage, key, value)
 		}
 	}
 

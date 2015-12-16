@@ -32,6 +32,21 @@ func main() {
 }
 ```
 
+If you have a custom vendoring solution, you might have this package stored under a different path than the default (`go get`).
+In this case, you can override the default with a command line option (using [godep] as a vendoring solution):
+
+```shell
+GO_LDFLAGS=$(linkflags -pkg=path/to/your/package -verpkg=path/to/your/package/Godeps/_workspace/src/github.com/gravitational/version)
+```
+
+The version part of the version information requires that you properly [tag] your packages:
+
+```shell
+$ git tag
+v1.0.0-alpha.1
+v1.0.0-beta.1
+```
+
 The build versioning scheme is a slight modification of the scheme from the [Kubernetes] project.
 It consists of three parts:
   - a version string in [semver] format
@@ -51,3 +66,5 @@ type Info struct {
 
 [Kubernetes]: <https://github.com/kubernetes/kubernetes>
 [semver]: <http://semver.org>
+[godep]: <https://github.com/tools/godep>
+[tag]: <https://git-scm.com/book/en/v2/Git-Basics-Tagging>
