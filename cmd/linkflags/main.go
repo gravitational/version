@@ -16,15 +16,15 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/gravitational/version/pkg/tool"
 )
 
 // pkg is the path to the package the tool will create linker flags for.
@@ -102,30 +102,16 @@ func run() error {
 	return nil
 }
 
-// toolError is a tool execution error.
-type toolError struct {
-	tool   string
-	output []byte
-	err    error
-}
-
-func (r *toolError) Error() string {
-	return fmt.Sprintf("error executing `%s`: %v (%s)", r.tool, r.err, r.output)
-}
-
 // goToolVersion determines the version of the `go tool`.
 func goToolVersion() (toolVersion, error) {
-	out, err := exec.Command("go", "version").CombinedOutput()
+	goTool := &tool.T{Cmd: "go"}
+	out, err := goTool.Exec("version")
 	if err != nil {
-		return toolVersionUnknown, &toolError{
-			tool:   "go",
-			output: out,
-			err:    err,
-		}
+		return toolVersionUnknown, err
 	}
-	build := bytes.Split(out, []byte(" "))
+	build := strings.Split(out, " ")
 	if len(build) > 2 {
-		return parseToolVersion(string(build[2])), nil
+		return parseToolVersion(build[2]), nil
 	}
 	return toolVersionUnknown, nil
 }
@@ -144,13 +130,15 @@ func parseToolVersion(version string) toolVersion {
 
 func newGit(pkg string) *git {
 	args := []string{"--work-tree", pkg, "--git-dir", filepath.Join(pkg, ".git")}
-	return &git{cmd: "git", args: args}
+	return &git{&tool.T{
+		Cmd:  "git",
+		Args: args,
+	}}
 }
 
 // git represents an instance of the git tool.
 type git struct {
-	cmd  string
-	args []string
+	*tool.T
 }
 
 // treeState describes the state of the git tree.
@@ -171,11 +159,11 @@ type toolVersion int
 const toolVersionUnknown toolVersion = 0
 
 func (r *git) commitID() (string, error) {
-	return r.exec("rev-parse", "HEAD^{commit}")
+	return r.Exec("rev-parse", "HEAD^{commit}")
 }
 
 func (r *git) treeState() (treeState, error) {
-	out, err := r.exec("status", "--porcelain")
+	out, err := r.Exec("status", "--porcelain")
 	if err != nil {
 		return "", err
 	}
@@ -186,26 +174,7 @@ func (r *git) treeState() (treeState, error) {
 }
 
 func (r *git) version(commitID string) (string, error) {
-	return r.exec("describe", "--tags", "--abbrev=14", commitID+"^{commit}")
-}
-
-// exec executes a given git command specified with args and returns the output
-// with whitespace trimmed.
-func (r *git) exec(args ...string) (string, error) {
-	opts := append([]string{}, r.args...)
-	opts = append(opts, args...)
-	out, err := exec.Command(r.cmd, opts...).CombinedOutput()
-	if err == nil {
-		out = bytes.TrimSpace(out)
-	}
-	if err != nil {
-		err = &toolError{
-			tool:   r.cmd,
-			output: out,
-			err:    err,
-		}
-	}
-	return string(out), err
+	return r.Exec("describe", "--tags", "--abbrev=14", commitID+"^{commit}")
 }
 
 // semverify transforms the output of `git describe` to be semver-complaint.
