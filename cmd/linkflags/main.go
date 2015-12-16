@@ -74,7 +74,7 @@ func main() {
 		linkFlags = append(linkFlags, linkFlag("version", version))
 	}
 
-	log.Printf("%s", strings.Join(linkFlags, " "))
+	fmt.Printf("%s", strings.Join(linkFlags, " "))
 }
 
 // toolError is a tool execution error.
@@ -122,11 +122,15 @@ func newGit(pkg string) *git {
 	return &git{cmd: "git", args: args}
 }
 
+// git represents an instance of the git tool.
 type git struct {
 	cmd  string
 	args []string
 }
 
+// treeState describes the state of the git tree.
+// `git describe --dirty` only considers changes to existing files.
+// We track tree state and consider untracked files as they also affect the build.
 type treeState string
 
 const (
@@ -134,6 +138,9 @@ const (
 	dirty           = "dirty"
 )
 
+// toolVersion represents a tool version as an integer.
+// toolVersion only considers the first two significant version parts and is computed as follows:
+// 	majorVersion*10+minorVersion
 type toolVersion int
 
 const toolVersionUnknown toolVersion = 0

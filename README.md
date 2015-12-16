@@ -31,3 +31,23 @@ func main() {
 	version.Print()
 }
 ```
+
+The build versioning scheme is a slight modification of the scheme from the [Kubernetes] project.
+It consists of three parts:
+  - a version string in [semver] format
+  - git commit ID
+  - git tree state (`clean` or `dirty`)
+
+```go
+type Info struct {
+	Version      string `json:"version"`
+	GitCommit    string `json:"gitCommit"`
+	GitTreeState string `json:"gitTreeState"`
+}
+```
+
+
+[//]: # (Footnots and references)
+
+[Kubernetes]: <https://github.com/kubernetes/kubernetes>
+[semver]: <http://semver.org>
