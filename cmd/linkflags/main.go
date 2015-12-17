@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gravitational/version"
 	"github.com/gravitational/version/pkg/tool"
 )
 
@@ -59,25 +60,9 @@ func run() error {
 		return fmt.Errorf("failed to determine go tool version: %v\n", err)
 	}
 
-	git := newGit(*pkg)
-	commitID, err := git.commitID()
+	info, err := getVersionInfo(*pkg)
 	if err != nil {
-		return fmt.Errorf("failed to obtain git commit ID: %v\n", err)
-	}
-	treeState, err := git.treeState()
-	if err != nil {
-		return fmt.Errorf("failed to determine git tree state: %v\n", err)
-	}
-	// FIXME: empty the version only on exit code error
-	version, err := git.version(string(commitID))
-	if err != nil {
-		version = ""
-	}
-	if version != "" {
-		version = semverify(version)
-		if treeState == dirty {
-			version = version + "-dirty"
-		}
+		return fmt.Errorf("failed to determine version information: %v\n", err)
 	}
 
 	var linkFlags []string
@@ -90,16 +75,44 @@ func run() error {
 	}
 
 	// Determine the values of version-related variables as commands to the go linker.
-	if commitID != "" {
-		linkFlags = append(linkFlags, linkFlag("gitCommit", commitID))
-		linkFlags = append(linkFlags, linkFlag("gitTreeState", string(treeState)))
+	if info.GitCommit != "" {
+		linkFlags = append(linkFlags, linkFlag("gitCommit", info.GitCommit))
+		linkFlags = append(linkFlags, linkFlag("gitTreeState", info.GitTreeState))
 	}
-	if version != "" {
-		linkFlags = append(linkFlags, linkFlag("version", version))
+	if info.Version != "" {
+		linkFlags = append(linkFlags, linkFlag("version", info.Version))
 	}
 
 	fmt.Printf("%s", strings.Join(linkFlags, " "))
 	return nil
+}
+
+// getVersionInfo collects the build version information for package pkg.
+func getVersionInfo(pkg string) (*version.Info, error) {
+	git := newGit(pkg)
+	commitID, err := git.commitID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain git commit ID: %v\n", err)
+	}
+	treeState, err := git.treeState()
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine git tree state: %v\n", err)
+	}
+	tag, err := git.tag(commitID)
+	if err != nil {
+		tag = ""
+	}
+	if tag != "" {
+		tag = semverify(tag)
+		if treeState == dirty {
+			tag = tag + "-" + string(treeState)
+		}
+	}
+	return &version.Info{
+		Version:      tag,
+		GitCommit:    commitID,
+		GitTreeState: string(treeState),
+	}, nil
 }
 
 // goToolVersion determines the version of the `go tool`.
@@ -173,7 +186,7 @@ func (r *git) treeState() (treeState, error) {
 	return dirty, nil
 }
 
-func (r *git) version(commitID string) (string, error) {
+func (r *git) tag(commitID string) (string, error) {
 	return r.Exec("describe", "--tags", "--abbrev=14", commitID+"^{commit}")
 }
 
