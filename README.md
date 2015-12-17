@@ -36,7 +36,9 @@ If you have a custom vendoring solution, you might have this package stored unde
 In this case, you can override the default with a command line option (using [godep] as a vendoring solution):
 
 ```shell
-GO_LDFLAGS=$(linkflags -pkg=path/to/your/package -verpkg=path/to/your/package/Godeps/_workspace/src/github.com/gravitational/version)
+MY_PACKAGE=github.com/my/package
+MY_PACKAGE_PATH=$(pwd)
+GO_LDFLAGS=$(linkflags -pkg=${MY_PACKAGE_PATH} -verpkg=${MY_PACKAGE}/Godeps/_workspace/src/github.com/gravitational/version)
 ```
 
 The version part of the version information requires that you properly [tag] your packages:

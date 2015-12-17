@@ -31,6 +31,12 @@ func TestAutoBuildVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if err = os.RemoveAll(filepath.Join(testPackagePath, ".git")); err != nil {
+			t.Fatalf("failed to clean up test repository: %v", err)
+		}
+	}()
+
 	_, err = git.Exec("add", filepath.Join(testPackagePath, "main.go"))
 	if err != nil {
 		t.Fatal(err)
@@ -69,10 +75,6 @@ func TestAutoBuildVersion(t *testing.T) {
 
 	if info.GitCommit != commitID {
 		t.Fatalf("expected git commit `%s` but got `%s`", commitID, info.GitCommit)
-	}
-
-	if err = os.RemoveAll(filepath.Join(testPackagePath, ".git")); err != nil {
-		t.Fatalf("failed to clean up test repository: %v", err)
 	}
 }
 
