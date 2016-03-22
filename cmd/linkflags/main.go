@@ -39,7 +39,7 @@ var versionPackage = flag.String("verpkg", "github.com/gravitational/version", "
 
 var compatMode = flag.Bool("compat", false, "generate linker flags using go1.4 syntax")
 
-var tagOnly = flag.Bool("tag", false, "print just tag only")
+var tagOnly = flag.Bool("tag", false, "print tag only")
 
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
 var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
