@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -40,6 +41,8 @@ var versionPackage = flag.String("verpkg", "github.com/gravitational/version", "
 var compatMode = flag.Bool("compat", false, "generate linker flags using go1.4 syntax")
 
 var tagOnly = flag.Bool("tag", false, "print tag only")
+
+var distroName = flag.Bool("distro", false, "print version with OS and architecture e.g. v0.0.1-linux-amd64")
 
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
 var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
@@ -77,6 +80,11 @@ func run() error {
 	// print just tag and return
 	if *tagOnly {
 		fmt.Printf(info.Version)
+		return nil
+	}
+
+	if *distroName {
+		fmt.Printf("%v-%v-%v", info.Version, runtime.GOOS, runtime.GOARCH)
 		return nil
 	}
 
