@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -38,6 +39,8 @@ var versionPackage = flag.String("verpkg", "github.com/gravitational/version", "
 
 var compatMode = flag.Bool("compat", false, "generate linker flags using go1.4 syntax")
 
+var tagOnly = flag.Bool("tag", false, "print just tag only")
+
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
 var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
 
@@ -54,7 +57,11 @@ func run() error {
 	log.SetFlags(0)
 	flag.Parse()
 	if *pkg == "" {
-		return fmt.Errorf("-pkg required")
+		dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			return err
+		}
+		*pkg = dir
 	}
 
 	goVersion, err := goToolVersion()
@@ -67,13 +74,18 @@ func run() error {
 		return fmt.Errorf("failed to determine version information: %v\n", err)
 	}
 
+	// print just tag and return
+	if *tagOnly {
+		fmt.Printf(info.Version)
+		return nil
+	}
+
 	var linkFlags []string
 	linkFlag := func(key, value string) string {
 		if goVersion <= 14 || *compatMode {
 			return fmt.Sprintf("-X %s.%s %s", *versionPackage, key, value)
-		} else {
-			return fmt.Sprintf("-X %s.%s=%s", *versionPackage, key, value)
 		}
+		return fmt.Sprintf("-X %s.%s=%s", *versionPackage, key, value)
 	}
 
 	// Determine the values of version-related variables as commands to the go linker.
