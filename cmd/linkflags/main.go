@@ -42,7 +42,7 @@ var compatMode = flag.Bool("compat", false, "generate linker flags using go1.4 s
 
 var tagOnly = flag.Bool("tag", false, "print tag only")
 
-var distroName = flag.Bool("distro", false, "print version with OS and architecture e.g. v0.0.1-linux-amd64")
+var release = flag.Bool("os-release", false, "print version with OS and architecture e.g. v0.0.1-linux-amd64")
 
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
 var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
@@ -83,7 +83,7 @@ func run() error {
 		return nil
 	}
 
-	if *distroName {
+	if *release {
 		fmt.Printf("%v-%v-%v", info.Version, runtime.GOOS, runtime.GOARCH)
 		return nil
 	}
