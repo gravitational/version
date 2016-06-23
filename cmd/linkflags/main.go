@@ -52,7 +52,7 @@ var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
 // goVersionPattern defines a regexp pattern to parse versions of the `go tool`.
 var goVersionPattern = regexp.MustCompile(`go([1-9])\.(\d+)(?:.\d+)*`)
 
-// dockerTagAntiPatern matches all chars not accepted by docker tag requirements
+// dockerTagAntiPattern matches all chars not accepted by docker tag requirements
 var dockerTagAntiPattern = regexp.MustCompile(`[^\w-_.]`)
 
 func main() {
