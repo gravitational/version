@@ -44,11 +44,16 @@ var tagOnly = flag.Bool("tag", false, "print tag only")
 
 var release = flag.Bool("os-release", false, "print version with OS and architecture e.g. v0.0.1-linux-amd64")
 
+var dockerTag = flag.Bool("docker-tag", false, "print version compatible with docker tag requirements")
+
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
 var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
 
 // goVersionPattern defines a regexp pattern to parse versions of the `go tool`.
 var goVersionPattern = regexp.MustCompile(`go([1-9])\.(\d+)(?:.\d+)*`)
+
+// dockerTagAntiPatern matches all chars not accepted by docker tag requirements
+var dockerTagAntiPattern = regexp.MustCompile(`[^\w-_.]`)
 
 func main() {
 	if err := run(); err != nil {
@@ -85,6 +90,11 @@ func run() error {
 
 	if *release {
 		fmt.Printf("%v-%v-%v", info.Version, runtime.GOOS, runtime.GOARCH)
+		return nil
+	}
+
+	if *dockerTag {
+		fmt.Printf("%v", dockerTagAntiPattern.ReplaceAllString(info.Version, "-"))
 		return nil
 	}
 
