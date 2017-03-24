@@ -47,7 +47,9 @@ var release = flag.Bool("os-release", false, "print version with OS and architec
 var dockerTag = flag.Bool("docker-tag", false, "print version compatible with docker tag requirements")
 
 // semverPattern defines a regexp pattern to modify the results of `git describe` to be semver-complaint.
-var semverPattern = regexp.MustCompile(`(.+)-([0-9]{1,})-g([0-9a-f]{14})$`)
+//
+// it matches versions like: 3.13.0-3-g2032d5b
+var semverPattern = regexp.MustCompile(`([0-9]+)\.([0-9]+)\.([0-9]+)-([0-9]{1,})-g([0-9a-f]{14})$`)
 
 // goVersionPattern defines a regexp pattern to parse versions of the `go tool`.
 var goVersionPattern = regexp.MustCompile(`go([1-9])\.(\d+)(?:.\d+)*`)
@@ -222,12 +224,13 @@ func (r *git) tag(commitID string) (string, error) {
 	return r.Exec("describe", "--tags", "--abbrev=14", commitID+"^{commit}")
 }
 
-// semverify transforms the output of `git describe` to be semver-complaint.
+// semverify transforms the output of `git describe` to be semver-compliant.
 func semverify(version string) string {
-	var result []byte
-	match := semverPattern.FindStringSubmatchIndex(version)
-	if match != nil {
-		return string(semverPattern.ExpandString(result, "$1.$2+$3", string(version), match))
+	match := semverPattern.FindStringSubmatch(version)
+	if match != nil && len(match) == 6 {
+		// replace the last component of the semver (which is always 0 in our versioning scheme)
+		// with the number of commits since the last tag
+		return fmt.Sprintf("%v.%v.%v+%v", match[1], match[2], match[4], match[5])
 	}
 	return version
 }
